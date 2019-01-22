@@ -41,6 +41,7 @@
 			this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.manualButton = new System.Windows.Forms.Button();
 			this.copyButton = new System.Windows.Forms.Button();
+			this.stateButton = new System.Windows.Forms.Button();
 			this.contextMenuStrip1.SuspendLayout();
 			this.toolStrip1.SuspendLayout();
 			this.SuspendLayout();
@@ -137,11 +138,22 @@
 			this.copyButton.UseVisualStyleBackColor = true;
 			this.copyButton.Click += new System.EventHandler(this.copyButton_Click);
 			// 
+			// stateButton
+			// 
+			this.stateButton.Location = new System.Drawing.Point(713, 460);
+			this.stateButton.Name = "stateButton";
+			this.stateButton.Size = new System.Drawing.Size(75, 23);
+			this.stateButton.TabIndex = 4;
+			this.stateButton.Text = "Stop";
+			this.stateButton.UseVisualStyleBackColor = true;
+			this.stateButton.Click += new System.EventHandler(this.stateButton_Click);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 491);
+			this.Controls.Add(this.stateButton);
 			this.Controls.Add(this.copyButton);
 			this.Controls.Add(this.manualButton);
 			this.Controls.Add(this.toolStrip1);
@@ -172,6 +184,7 @@
 		private System.Windows.Forms.ToolStripMenuItem quitToolStripMenuItem;
 		private System.Windows.Forms.Button manualButton;
 		private System.Windows.Forms.Button copyButton;
+		private System.Windows.Forms.Button stateButton;
 	}
 }
 

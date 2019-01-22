@@ -7,6 +7,7 @@ namespace BeatmapCatcher
 	public partial class MainForm : Form
 	{
 		public bool Minimized;
+		public bool Started = false;
 
 		public MainForm()
 		{
@@ -40,6 +41,17 @@ namespace BeatmapCatcher
 				showNotifyIcon();
 				base.OnFormClosing(e);
 			}
+		}
+
+		public void setStateButton(string s)
+		{
+			if (this.stateButton.InvokeRequired)
+			{
+				this.stateButton.Invoke(new Action<string>(setStateButton), new object[] { s });
+				return;
+			}
+
+			this.stateButton.Text = s;
 		}
 
 		public void log(string str)
@@ -126,10 +138,21 @@ namespace BeatmapCatcher
 			Clipboard.SetText(logBox.Text.Replace("\n", Environment.NewLine));
 		}
 
+		private void stateButton_Click(object sender, EventArgs e)
+		{
+			if (Started)
+			{
+				Program.stopWatch();
+			} else {
+				Program.startWatch();
+			}
+		}
+
 		private void quitMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
 
 		private void settingsToolStripMenuItem_Click(object sender, EventArgs e) { Program.settingsForm.Visible = true; }
 
 		private void quitToolStripMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
+
 	}
 }

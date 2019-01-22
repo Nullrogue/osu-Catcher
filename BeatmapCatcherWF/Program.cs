@@ -13,7 +13,7 @@ namespace BeatmapCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static double VersionNum = 1.1;
+		static string VersionNum = "1.0";
 		public static Settings settings;
 		public static string[] ExeArgs;
 		public static FileSystemWatcher Watcher;
@@ -123,6 +123,8 @@ namespace BeatmapCatcher
 			try
 			{
 				Watcher.EnableRaisingEvents = true;
+				mainForm.Started = true;
+				mainForm.setStateButton("Stop");
 
 				mainForm.log("Started watching for beatmaps in " + Watcher.Path);
 			} catch (Exception e) {
@@ -135,6 +137,8 @@ namespace BeatmapCatcher
 			try
 			{
 				Watcher.EnableRaisingEvents = false;
+				mainForm.Started = false;
+				mainForm.setStateButton("Start");
 
 				mainForm.log("Stopped watching for beatmaps in " + Watcher.Path);
 			}
