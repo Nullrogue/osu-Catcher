@@ -13,7 +13,7 @@ namespace BeatmapCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.0";
+		static string VersionNum = "1.0.0";
 		public static Settings settings;
 		public static string[] ExeArgs;
 		public static FileSystemWatcher Watcher;
@@ -152,38 +152,43 @@ namespace BeatmapCatcher
 
 		public static void parseOsu(string path)
 		{
-			using (StreamReader read = new StreamReader(path))
+			try
 			{
-				while (true)
+				using (StreamReader read = new StreamReader(path))
 				{
-					string line = read.ReadLine();
-
-					if (line == null)
-						break;
-
-					if (line == "[Events]")
+					while (true)
 					{
-						line = read.ReadLine();
-						line = read.ReadLine();
+						string line = read.ReadLine();
 
-						if (line.IndexOf("Video,") != -1)
-							line = read.ReadLine();
-
-						int Index = line.IndexOf("0,0,\"");
-						int lastIndex = line.LastIndexOf("\"");
-
-						if (Index < 0)
+						if (line == null)
 							break;
 
-						Index = line.IndexOf("\"");
+						if (line == "[Events]")
+						{
+							line = read.ReadLine();
+							line = read.ReadLine();
 
-						string image = path.Substring(0, path.LastIndexOf('\\')) + "\\" + line.Substring(Index + 1, lastIndex - Index - 1);
+							if (line.IndexOf("Video,") != -1)
+								line = read.ReadLine();
 
-						imagePaths.Add(image);
+							int Index = line.IndexOf("0,0,\"");
+							int lastIndex = line.LastIndexOf("\"");
 
-						break;
+							if (Index < 0)
+								break;
+
+							Index = line.IndexOf("\"");
+
+							string image = path.Substring(0, path.LastIndexOf('\\')) + "\\" + line.Substring(Index + 1, lastIndex - Index - 1);
+
+							imagePaths.Add(image);
+
+							break;
+						}
 					}
 				}
+			} catch (Exception e) {
+				mainForm.log("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
