@@ -1,6 +1,7 @@
+# Beatmap Catcher
 ## Overview
 Beatmap Catcher is a useful and intuitive program that allows users to automatically delete the background of any
-[Osu! beatmap](https://osu.ppy.sh/beatmapsets) as it is being added to Osu! Inspired by [Recursion's program](https://osu.ppy.sh/community/forums/topics/365196) and my unwillingness to open it and click one button everytime I downloaded beatmaps.
+<a href="https://osu.ppy.sh/beatmapsets" target="_blank">Osu! beatmap</a> as it is being added to Osu! Inspired by [Recursion's program](https://osu.ppy.sh/community/forums/topics/365196) and my unwillingness to open it and click one button everytime I downloaded beatmaps.
 ## Usage
 Once the program has been [installed](#installation) and run, you should be presented with a screen similar to the one below:
 ![ ](https://i.imgur.com/IMNMcDk.png)
