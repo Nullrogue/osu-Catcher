@@ -16,7 +16,7 @@ Right off the bat you can see the log box in the middle of the window says there
 ## Installation
 * Go to [releases](https://github.com/NullvaIue/BeatmapCatcher/releases) and download the latest version of either the installer (recommended) or the zip file.
 	* For the installer:
-		* Beware: The installer might raise a false positive with your anti-virus so be ready for that.
+		* Beware: The installer might raise a false positive with your anti-virus and Windows Defender will tell you that it is an untrusted executable, this is common for [NSIS](https://nsis.sourceforge.io/Main_Page) based installers. Click `More Info > Run Anyway`
 		* Run the installer exe and follow the basic steps.
 	* For the zip file:
 		* Extract the folder to a place that you are familiar with and can access easily/create a shortcut to.
