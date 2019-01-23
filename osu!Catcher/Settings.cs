@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace BeatmapCatcher
+namespace osuCatcher
 {
 	class Settings
 	{

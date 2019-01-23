@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 
-namespace BeatmapCatcher
+namespace osuCatcher
 {
 	static class Program
 	{
@@ -26,7 +26,7 @@ namespace BeatmapCatcher
 
 			if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1)
 			{
-				MessageBox.Show("Beatmap Catcher already running. Only one instance of this application is allowed");
+				MessageBox.Show("osu!Catcher already running. Only one instance of this application is allowed");
 				return;
 			}
 
@@ -54,7 +54,7 @@ namespace BeatmapCatcher
 				if (ExeArgs.Length != 0 && ExeArgs[0] == "-s" && settings.StartMinimized)
 					mainForm.Minimized = true;
 
-				mainForm.log("Beatmap Catcher Version " + VersionNum);
+				mainForm.log("osu!Catcher Version " + VersionNum);
 
 				mainForm.Minimized = settings.StartMinimized;
 				settingsForm.setRunCheck(settings.RunOnStartup);

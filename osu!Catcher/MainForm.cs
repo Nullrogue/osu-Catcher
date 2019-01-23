@@ -2,7 +2,7 @@
 using System.IO;
 using System.Windows.Forms;
 
-namespace BeatmapCatcher
+namespace osuCatcher
 {
 	public partial class MainForm : Form
 	{

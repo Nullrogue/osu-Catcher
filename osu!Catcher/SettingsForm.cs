@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace BeatmapCatcher
+namespace osuCatcher
 {
 	public partial class SettingsForm : Form
 	{

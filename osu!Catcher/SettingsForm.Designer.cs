@@ -1,4 +1,4 @@
-﻿namespace BeatmapCatcher
+﻿namespace osuCatcher
 {
 	partial class SettingsForm
 	{

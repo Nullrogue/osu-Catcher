@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BeatmapCatcher.Properties {
+namespace osuCatcher.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
