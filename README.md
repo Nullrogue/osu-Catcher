@@ -4,7 +4,7 @@ osu!Catcher is a program that allows users to automatically delete the backgroun
 <a href="https://osu.ppy.sh/beatmapsets" target="_blank">Osu! beatmap</a> as it is being added to Osu! Inspired by [Recursion's program](https://osu.ppy.sh/community/forums/topics/365196) and my unwillingness to open it and click one button every time I download beatmaps.
 ## Usage
 Once the program has been [installed](#installation) and run, you should be presented with a screen similar to the one below:
-![ ](https://i.imgur.com/0M12Wbo.png)
+![ ](https://i.imgur.com/NwwgWNG.png)
 </br>
 Right off the bat you can see the log box in the middle of the window says there is a warning mentioning the settings.json file. This is a normal occurrence the first time you start the program up but should you need to change them you can change them by going `File > Settings` (This is where you would change the directory the program uses to check for songs if you get an error related to that)
 </br>
