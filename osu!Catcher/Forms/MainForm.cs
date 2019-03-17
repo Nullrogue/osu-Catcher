@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
+using System.Timers;
 using System.Windows.Forms;
 
 namespace osuCatcher
@@ -54,24 +56,66 @@ namespace osuCatcher
 			this.stateButton.Text = s;
 		}
 
-		public void log(string str)
+		public void Log(string text)
 		{
-			string result;
-
-			if (str != "")
+			if (logBox.InvokeRequired)
 			{
-				result = "[" + DateTime.Now.ToString("MM/dd/y hh:mm:ss") + "] " + str + "\n";
-
-				if (logBox.InvokeRequired)
-				{
-					logBox.Invoke(new Action<string>(log), new object[] { str });
-					return;
-				}
-
-				logBox.AppendText(result);
+				logBox.Invoke(new Action<string>(Log), new object[] { text });
+				return;
 			}
+
+			logBox.AppendText("[" + DateTime.Now.ToString("MM/dd/y hh:mm:ss") + "] ");
+
+			int start = logBox.TextLength;
+			logBox.AppendText(text + "\n");
+			int end = logBox.TextLength;
+
+			logBox.Select(start, end - start);
+				logBox.SelectionColor = Color.Green;
+
+			logBox.SelectionLength = 0;
 		}
 
+		public void WarningLog(string text)
+		{
+			if (logBox.InvokeRequired)
+			{
+				logBox.Invoke(new Action<string>(WarningLog), new object[] { text });
+				return;
+			}
+
+			logBox.AppendText("[" + DateTime.Now.ToString("MM/dd/y hh:mm:ss") + "] ");
+
+			int start = logBox.TextLength;
+			logBox.AppendText(text + "\n");
+			int end = logBox.TextLength;
+
+			logBox.Select(start, end - start);
+				logBox.SelectionColor = Color.DarkGoldenrod;
+
+			logBox.SelectionLength = 0;
+		}
+
+		public void ErrorLog(string text)
+		{
+			if (logBox.InvokeRequired)
+			{
+				logBox.Invoke(new Action<string>(ErrorLog), new object[] { text });
+				return;
+			}
+
+			logBox.AppendText("[" + DateTime.Now.ToString("MM/dd/y hh:mm:ss") + "] ");
+
+			int start = logBox.TextLength;
+			logBox.AppendText(text + "\n");
+			int end = logBox.TextLength;
+
+			logBox.Select(start, end - start);
+				logBox.SelectionColor = Color.DarkRed;
+
+			logBox.SelectionLength = 0;
+		}
+		
 		private void showNotifyIcon()
 		{
 			Hide();
@@ -109,7 +153,6 @@ namespace osuCatcher
 			try
 			{
 				int count = 0;
-				Program.mainForm.log("Manual Scan Started:");
 
 				foreach (string d in Directory.GetDirectories(Program.settings.OsuPath + "\\Songs\\"))
 					foreach (string s in Directory.GetFiles(d, "*.osu"))
@@ -122,13 +165,13 @@ namespace osuCatcher
 						File.Delete(Program.imagePaths[i]);
 						Program.imagePaths.RemoveAt(i);
 						count++;
-						Program.mainForm.log("Manually found and deleted background [" + Program.imagePaths[i].Substring(Program.imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).Substring(Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+						Program.mainForm.Log("Manually found and deleted background [" + Program.imagePaths[i].Substring(Program.imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).Substring(Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
 					}
 				}
 
-				Program.mainForm.log("Manual Scan Finished (Removed " + count + " backgrounds)");
+				Program.mainForm.Log("Manual Scan Finished (Removed " + count + " backgrounds)");
 			} catch (Exception ex) {
-				Program.mainForm.log("ERROR: When manually scanning for backgrounds\n" + ex.Message + "\n" + ex.StackTrace);
+				Program.mainForm.ErrorLog("ERROR: When manually scanning for backgrounds\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
 
@@ -148,9 +191,13 @@ namespace osuCatcher
 			}
 		}
 
-		private void quitMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
+		private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			Program.settingsForm.Location = new System.Drawing.Point(Program.mainForm.Location.X + ((Program.mainForm.Size.Width / 2) - (Program.settingsForm.Size.Width / 2)), Program.mainForm.Location.Y + ((Program.mainForm.Size.Height / 2) - (Program.settingsForm.Size.Height / 2)));
+			Program.settingsForm.Visible = true;
+		}
 
-		private void settingsToolStripMenuItem_Click(object sender, EventArgs e) { Program.settingsForm.Visible = true; }
+		private void quitMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
 
 		private void quitToolStripMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
 

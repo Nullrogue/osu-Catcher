@@ -63,13 +63,13 @@
 			// notifyIcon
 			// 
 			this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
-			this.notifyIcon.Text = "Beatmap Catcher";
+			this.notifyIcon.Text = "osu!Catcher";
 			this.notifyIcon.DoubleClick += new System.EventHandler(this.notifyIcon_DoubleClick);
 			// 
 			// contextMenuStrip1
 			// 
 			this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-			this.quitMenuItem});
+            this.quitMenuItem});
 			this.contextMenuStrip1.Name = "contextMenuStrip1";
 			this.contextMenuStrip1.Size = new System.Drawing.Size(98, 26);
 			// 
@@ -88,7 +88,7 @@
 			// toolStrip1
 			// 
 			this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-			this.toolStripLabel1});
+            this.toolStripLabel1});
 			this.toolStrip1.Location = new System.Drawing.Point(0, 0);
 			this.toolStrip1.Name = "toolStrip1";
 			this.toolStrip1.Size = new System.Drawing.Size(800, 25);
@@ -98,8 +98,8 @@
 			// toolStripLabel1
 			// 
 			this.toolStripLabel1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-			this.settingsToolStripMenuItem,
-			this.quitToolStripMenuItem});
+            this.settingsToolStripMenuItem,
+            this.quitToolStripMenuItem});
 			this.toolStripLabel1.Name = "toolStripLabel1";
 			this.toolStripLabel1.Size = new System.Drawing.Size(38, 22);
 			this.toolStripLabel1.Text = "File";

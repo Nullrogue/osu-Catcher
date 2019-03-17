@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -13,7 +14,7 @@ namespace osuCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.0.0";
+		static string VersionNum = "1.0.5";
 		public static Settings settings;
 		public static string[] ExeArgs;
 		public static FileSystemWatcher Watcher;
@@ -26,7 +27,7 @@ namespace osuCatcher
 
 			if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1)
 			{
-				MessageBox.Show("osu!Catcher already running. Only one instance of this application is allowed");
+				MessageBox.Show("osu!Catcher already running. Only one instance can be running at a time.");
 				return;
 			}
 
@@ -48,13 +49,13 @@ namespace osuCatcher
 
 					mainForm = new MainForm();
 					settingsForm = new SettingsForm();
-					mainForm.log("WARNING: Settings not found, generating default settings.json file.");
+					mainForm.WarningLog("WARNING: Settings not found, generating default settings.json file.");
 				}
 
 				if (ExeArgs.Length != 0 && ExeArgs[0] == "-s" && settings.StartMinimized)
 					mainForm.Minimized = true;
 
-				mainForm.log("osu!Catcher Version " + VersionNum);
+				mainForm.Log("osu!Catcher Version " + VersionNum);
 
 				mainForm.Minimized = settings.StartMinimized;
 				settingsForm.setRunCheck(settings.RunOnStartup);
@@ -80,13 +81,13 @@ namespace osuCatcher
 
 					startWatch();
 				} else {
-					mainForm.log("ERROR: Valid Osu installation not found in: " + settings.OsuPath);
+					mainForm.ErrorLog("ERROR: Valid Osu installation not found in: " + settings.OsuPath);
 				}
 
 				Application.EnableVisualStyles();
 				Application.Run(mainForm);
 			} catch (Exception e) {
-				mainForm.log("ERROR: Initializing application\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Initializing application\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -95,16 +96,15 @@ namespace osuCatcher
 			try
 			{
 				WshShellClass wshShell = new WshShellClass();
-				IWshRuntimeLibrary.IWshShortcut shortcut;
 
-				shortcut = (IWshRuntimeLibrary.IWshShortcut)wshShell.CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
+				IWshShortcut shortcut = (IWshShortcut)wshShell.CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
 
 				shortcut.TargetPath = Application.ExecutablePath;
 				shortcut.WorkingDirectory = Application.StartupPath;
 				shortcut.Arguments = "-s";
 				shortcut.Save();
 			} catch (Exception e) {
-				mainForm.log("ERROR: Creating shortcut\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Creating shortcut\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -114,7 +114,7 @@ namespace osuCatcher
 			{
 				System.IO.File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
 			} catch (Exception e) {
-				mainForm.log("ERROR: Deleting  shortcut\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Deleting  shortcut\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -126,9 +126,9 @@ namespace osuCatcher
 				mainForm.Started = true;
 				mainForm.setStateButton("Stop");
 
-				mainForm.log("Started watching for beatmaps in " + Watcher.Path);
+				mainForm.Log("Started watching for beatmaps in " + Watcher.Path);
 			} catch (Exception e) {
-				mainForm.log("ERROR: Failed while starting the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Failed while starting the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -140,11 +140,11 @@ namespace osuCatcher
 				mainForm.Started = false;
 				mainForm.setStateButton("Start");
 
-				mainForm.log("Stopped watching for beatmaps in " + Watcher.Path);
+				mainForm.Log("Stopped watching for beatmaps in " + Watcher.Path);
 			}
 			catch (Exception e)
 			{
-				mainForm.log("ERROR: Failed while stopping the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Failed while stopping the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -188,7 +188,7 @@ namespace osuCatcher
 					}
 				}
 			} catch (Exception e) {
-				mainForm.log("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -198,7 +198,17 @@ namespace osuCatcher
 			{
 				if (getExtension(e.FullPath).Contains("osz"))
 				{
-					string dir = e.FullPath.Substring(0, e.FullPath.Length - 4).Replace(".", "");
+					string dir = e.FullPath.Substring(0, e.FullPath.LastIndexOf('\\'));
+					string path = e.FullPath.Substring(e.FullPath.LastIndexOf('\\'), (e.FullPath.Substring(e.FullPath.LastIndexOf('\\')).Length - 4)).Replace(".", "");
+
+					if (path.Length > 84)
+					{
+						mainForm.ErrorLog("84 " + path);
+						path = path.Substring(0, 84);
+					}
+
+					dir += path;
+
 					string[] osuFiles = Directory.GetFiles(dir, "*.osu");
 
 					foreach (string s in osuFiles)
@@ -208,7 +218,7 @@ namespace osuCatcher
 					{
 						if (System.IO.File.Exists(imagePaths[i]))
 						{
-							mainForm.log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
 							System.IO.File.Delete(imagePaths[i]);
 						}
 
@@ -217,7 +227,7 @@ namespace osuCatcher
 				}
 			} catch (Exception ex)
 			{
-				mainForm.log("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
+				mainForm.ErrorLog("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
 	}

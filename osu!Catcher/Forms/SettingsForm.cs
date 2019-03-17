@@ -102,11 +102,11 @@ namespace osuCatcher
 
 						Program.startWatch();
 					} else {
-						Program.mainForm.log("ERROR: Valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
+						Program.mainForm.ErrorLog("ERROR: Valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
 					}
 				}
 			} catch (Exception ex) {
-				Program.mainForm.log("ERROR: Failed while selecting file path\n" + ex.Message + "\n" + ex.StackTrace);
+				Program.mainForm.ErrorLog("ERROR: Failed while selecting file path\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
 	}
