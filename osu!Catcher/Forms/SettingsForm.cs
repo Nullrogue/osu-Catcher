@@ -8,7 +8,7 @@ namespace osuCatcher
 		public SettingsForm()
 		{
 			InitializeComponent();
-			this.Visible = false;
+			Visible = false;
 		}
 
 		protected override void OnFormClosing(FormClosingEventArgs e)
@@ -64,18 +64,18 @@ namespace osuCatcher
 
 		private void runCheck_CheckedChanged(object sender, EventArgs e)
 		{
-			if (runCheck.Checked)
-				Program.CreateStartupLnk();
-			else
-				Program.DeleteStartupLnk();
+            if (runCheck.Checked)
+                Program.CreateStartupLnk();
+            else
+                Program.DeleteStartupLnk();
 
-			Program.settings.RunOnStartup = runCheck.Checked;
+            Program.settings.RunOnStartup = runCheck.Checked;
 			Program.settings.writeSettings();
 		}
 
 		private void minimizedCheck_CheckedChanged(object sender, EventArgs e)
-		{
-			Program.settings.StartMinimized = minimizedCheck.Checked;
+        {
+            Program.settings.StartMinimized = minimizedCheck.Checked;
 			Program.settings.writeSettings();
 		}
 

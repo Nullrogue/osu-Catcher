@@ -20,7 +20,6 @@ namespace osuCatcher
 
 			if (Minimized)
 				showNotifyIcon();
-
 		}
 
 		protected override void SetVisibleCore(bool value)
@@ -197,7 +196,11 @@ namespace osuCatcher
 			Program.settingsForm.Visible = true;
 		}
 
-		private void quitMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
+		private void quitMenuItem_Click(object sender, EventArgs e)
+        {
+            notifyIcon.Visible = false;
+            System.Environment.Exit(0);
+        }
 
 		private void quitToolStripMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
 

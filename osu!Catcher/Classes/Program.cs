@@ -14,11 +14,12 @@ namespace osuCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.0.5";
+		static string VersionNum = "1.1.0";
 		public static Settings settings;
 		public static string[] ExeArgs;
 		public static FileSystemWatcher Watcher;
 		public static List<String> imagePaths = new List<String>();
+        public static List<String> osuPaths = new List<String>();
 
 		[STAThread]
 		static void Main(string[] args)
@@ -38,12 +39,8 @@ namespace osuCatcher
 					settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(exeDirectory + "\\settings.json"));
 					mainForm = new MainForm();
 					settingsForm = new SettingsForm();
-				}
-				else
-				{
+				} else {
 					settings = new Settings();
-					if (System.IO.File.Exists(exeDirectory + "\\settings.json"))
-						System.IO.File.Create(exeDirectory + "\\settings.json");
 
 					settings.writeSettings();
 
@@ -52,9 +49,9 @@ namespace osuCatcher
 					mainForm.WarningLog("WARNING: Settings not found, generating default settings.json file.");
 				}
 
-				if (ExeArgs.Length != 0 && ExeArgs[0] == "-s" && settings.StartMinimized)
+				if (ExeArgs.Length != 0 && ExeArgs[0] == "-minimized" && settings.StartMinimized)
 					mainForm.Minimized = true;
-
+				
 				mainForm.Log("osu!Catcher Version " + VersionNum);
 
 				mainForm.Minimized = settings.StartMinimized;
@@ -71,6 +68,7 @@ namespace osuCatcher
 				};
 
 				Watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+                Watcher.Created += new FileSystemEventHandler(OnCreated);
 
 				if (Directory.Exists(settings.OsuPath + "\\Songs\\"))
 				{
@@ -101,7 +99,10 @@ namespace osuCatcher
 
 				shortcut.TargetPath = Application.ExecutablePath;
 				shortcut.WorkingDirectory = Application.StartupPath;
-				shortcut.Arguments = "-s";
+
+                if (settings.StartMinimized)
+				    shortcut.Arguments = "-minimized";
+
 				shortcut.Save();
 			} catch (Exception e) {
 				mainForm.ErrorLog("ERROR: Creating shortcut\n" + e.Message + "\n" + e.StackTrace);
@@ -150,7 +151,7 @@ namespace osuCatcher
 
 		public static string getExtension(String path) { return path.Split('.')[path.Split('.').Length - 1]; }
 
-		public static void parseOsu(string path)
+		public static String parseOsu(string path)
 		{
 			try
 			{
@@ -181,52 +182,45 @@ namespace osuCatcher
 
 							string image = path.Substring(0, path.LastIndexOf('\\')) + "\\" + line.Substring(Index + 1, lastIndex - Index - 1);
 
-							imagePaths.Add(image);
-
-							break;
+							return image;
 						}
 					}
 				}
-			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
-			}
-		}
 
-		private static void OnDeleted(object source, FileSystemEventArgs e)
+                return null;
+            } catch (Exception e) {
+				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
+                return null;
+            }
+        }
+
+        private static void OnCreated(object source, FileSystemEventArgs e)
+        {
+            if (!Directory.Exists(e.FullPath) && getExtension(e.FullPath).Contains("osu"))
+                osuPaths.Add(e.FullPath);
+        }
+
+        private static void OnDeleted(object source, FileSystemEventArgs e)
 		{
 			try
 			{
 				if (getExtension(e.FullPath).Contains("osz"))
 				{
-					string dir = e.FullPath.Substring(0, e.FullPath.LastIndexOf('\\'));
-					string path = e.FullPath.Substring(e.FullPath.LastIndexOf('\\'), (e.FullPath.Substring(e.FullPath.LastIndexOf('\\')).Length - 4)).Replace(".", "");
-
-					if (path.Length > 84)
-					{
-						mainForm.ErrorLog("84 " + path);
-						path = path.Substring(0, 84);
-					}
-
-					dir += path;
-
-					string[] osuFiles = Directory.GetFiles(dir, "*.osu");
-
-					foreach (string s in osuFiles)
-						parseOsu(s);
+					foreach (string s in osuPaths)
+                        imagePaths.Add(parseOsu(s));
 
 					for (int i = imagePaths.Count - 1; i >= 0; i--)
 					{
-						if (System.IO.File.Exists(imagePaths[i]))
+						if (imagePaths[i] != null && System.IO.File.Exists(imagePaths[i]))
 						{
-							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
 							System.IO.File.Delete(imagePaths[i]);
-						}
+                            mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+                        }
 
-						imagePaths.RemoveAt(i);
+                        imagePaths.RemoveAt(i);
 					}
 				}
-			} catch (Exception ex)
-			{
+			} catch (Exception ex) {
 				mainForm.ErrorLog("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
