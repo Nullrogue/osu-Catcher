@@ -6,7 +6,7 @@ namespace osuCatcher
 {
 	class Settings
 	{
-		public string OsuPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\osu!";
+		public string OsuPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\osu!\\Songs\\";
 		public bool RunOnStartup = false;
 		public bool StartMinimized = false;
 		public bool MinimizeOnClose = true;

@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -14,72 +13,69 @@ namespace osuCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.1.0";
-		public static Settings settings;
-		public static string[] ExeArgs;
+		static string VersionNum = "1.1.3";
+		public static Settings settings = new Settings();
 		public static FileSystemWatcher Watcher;
 		public static List<String> imagePaths = new List<String>();
-        public static List<String> osuPaths = new List<String>();
+		public static List<String> osuPaths = new List<String>();
 
 		[STAThread]
-		static void Main(string[] args)
+		static void Main()
 		{
-			ExeArgs = args;
-
+			// Check to make sure that no other duplicate process is being run.
 			if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1)
 			{
 				MessageBox.Show("osu!Catcher already running. Only one instance can be running at a time.");
 				return;
 			}
 
+			mainForm = new MainForm();
+			settingsForm = new SettingsForm();
+
+			Watcher = new FileSystemWatcher
+			{
+				NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
+				Filter = "*.*",
+				IncludeSubdirectories = true
+			};
+
+			Watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+			Watcher.Created += new FileSystemEventHandler(OnCreated);
+
 			try
 			{
-				if (System.IO.File.Exists(exeDirectory + "\\settings.json"))
+			if (System.IO.File.Exists(exeDirectory + "\\settings.json"))
 				{
+				// Store the settings from the already compiled settings.json file to the settings object.
 					settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(exeDirectory + "\\settings.json"));
-					mainForm = new MainForm();
-					settingsForm = new SettingsForm();
 				} else {
-					settings = new Settings();
-
-					settings.writeSettings();
-
-					mainForm = new MainForm();
-					settingsForm = new SettingsForm();
 					mainForm.WarningLog("WARNING: Settings not found, generating default settings.json file.");
-				}
 
-				if (ExeArgs.Length != 0 && ExeArgs[0] == "-minimized" && settings.StartMinimized)
-					mainForm.Minimized = true;
+					// Create settings file and write default settings object in json format.
+					settings.writeSettings();
+				}
 				
 				mainForm.Log("osu!Catcher Version " + VersionNum);
 
 				mainForm.Minimized = settings.StartMinimized;
+
+				if (mainForm.Minimized)
+					mainForm.showNotifyIcon();
+
+				// Set the form checkboxes to match the current settings.
 				settingsForm.setRunCheck(settings.RunOnStartup);
 				settingsForm.setMinCheck(settings.StartMinimized);
 				settingsForm.setPathBox(settings.OsuPath);
 				settingsForm.setCloseCheck(settings.MinimizeOnClose);
 
-				Watcher = new FileSystemWatcher
+				if (Directory.Exists(settings.OsuPath))
 				{
-					NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
-					Filter = "*.*",
-					IncludeSubdirectories = true
-				};
+					Watcher.Path = settings.OsuPath;
 
-				Watcher.Deleted += new FileSystemEventHandler(OnDeleted);
-                Watcher.Created += new FileSystemEventHandler(OnCreated);
-
-				if (Directory.Exists(settings.OsuPath + "\\Songs\\"))
-				{
-					if (settings.StartMinimized)
-						mainForm.Minimized = true;
-
-					Watcher.Path = settings.OsuPath + "\\Songs\\";
-
-					startWatch();
+					// Start watching the path for file changes.
+					setWatch(true);
 				} else {
-					mainForm.ErrorLog("ERROR: Valid Osu installation not found in: " + settings.OsuPath);
+					mainForm.ErrorLog("ERROR: No valid Osu installation found in: " + settings.OsuPath);
 				}
 
 				Application.EnableVisualStyles();
@@ -100,9 +96,6 @@ namespace osuCatcher
 				shortcut.TargetPath = Application.ExecutablePath;
 				shortcut.WorkingDirectory = Application.StartupPath;
 
-                if (settings.StartMinimized)
-				    shortcut.Arguments = "-minimized";
-
 				shortcut.Save();
 			} catch (Exception e) {
 				mainForm.ErrorLog("ERROR: Creating shortcut\n" + e.Message + "\n" + e.StackTrace);
@@ -119,33 +112,16 @@ namespace osuCatcher
 			}
 		}
 
-		public static void startWatch()
+		public static void setWatch(bool state)
 		{
 			try
 			{
-				Watcher.EnableRaisingEvents = true;
-				mainForm.Started = true;
-				mainForm.setStateButton("Stop");
+				Watcher.EnableRaisingEvents = state;
+				mainForm.setStateButton((state ? "Stop" : "Start"));
 
-				mainForm.Log("Started watching for beatmaps in " + Watcher.Path);
+				mainForm.Log((state ? "Started" : "Stopped") + " watching for beatmaps in " + Watcher.Path);
 			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Failed while starting the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
-			}
-		}
-
-		public static void stopWatch()
-		{
-			try
-			{
-				Watcher.EnableRaisingEvents = false;
-				mainForm.Started = false;
-				mainForm.setStateButton("Start");
-
-				mainForm.Log("Stopped watching for beatmaps in " + Watcher.Path);
-			}
-			catch (Exception e)
-			{
-				mainForm.ErrorLog("ERROR: Failed while stopping the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
+				mainForm.ErrorLog("ERROR: Failed while " + (state ? "starting" : "stopping") + " the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -187,37 +163,37 @@ namespace osuCatcher
 					}
 				}
 
-                return null;
-            } catch (Exception e) {
+				return null;
+			} catch (Exception e) {
 				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
-                return null;
-            }
-        }
+			return null;
+			}
+		}
 
-        private static void OnCreated(object source, FileSystemEventArgs e)
-        {
-            if (!Directory.Exists(e.FullPath) && getExtension(e.FullPath).Contains("osu"))
-                osuPaths.Add(e.FullPath);
-        }
+		private static void OnCreated(object source, FileSystemEventArgs e)
+		{
+			if (!Directory.Exists(e.FullPath) && getExtension(e.FullPath).Contains("osu"))
+				osuPaths.Add(e.FullPath);
+		}
 
-        private static void OnDeleted(object source, FileSystemEventArgs e)
+		private static void OnDeleted(object source, FileSystemEventArgs e)
 		{
 			try
 			{
 				if (getExtension(e.FullPath).Contains("osz"))
 				{
 					foreach (string s in osuPaths)
-                        imagePaths.Add(parseOsu(s));
+						imagePaths.Add(parseOsu(s));
 
 					for (int i = imagePaths.Count - 1; i >= 0; i--)
 					{
 						if (imagePaths[i] != null && System.IO.File.Exists(imagePaths[i]))
 						{
 							System.IO.File.Delete(imagePaths[i]);
-                            mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
-                        }
+							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+						}
 
-                        imagePaths.RemoveAt(i);
+						imagePaths.RemoveAt(i);
 					}
 				}
 			} catch (Exception ex) {

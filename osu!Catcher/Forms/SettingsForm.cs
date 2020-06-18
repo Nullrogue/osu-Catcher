@@ -64,18 +64,18 @@ namespace osuCatcher
 
 		private void runCheck_CheckedChanged(object sender, EventArgs e)
 		{
-            if (runCheck.Checked)
-                Program.CreateStartupLnk();
-            else
-                Program.DeleteStartupLnk();
+			if (runCheck.Checked)
+				Program.CreateStartupLnk();
+			else
+				Program.DeleteStartupLnk();
 
-            Program.settings.RunOnStartup = runCheck.Checked;
+			Program.settings.RunOnStartup = runCheck.Checked;
 			Program.settings.writeSettings();
 		}
 
 		private void minimizedCheck_CheckedChanged(object sender, EventArgs e)
-        {
-            Program.settings.StartMinimized = minimizedCheck.Checked;
+		{
+			Program.settings.StartMinimized = minimizedCheck.Checked;
 			Program.settings.writeSettings();
 		}
 
@@ -91,18 +91,18 @@ namespace osuCatcher
 			{
 				if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
 				{
-					if (System.IO.Directory.Exists(folderBrowserDialog.SelectedPath + "\\Songs\\"))
+					if (System.IO.Directory.Exists(folderBrowserDialog.SelectedPath))
 					{
 						Program.settings.OsuPath = folderBrowserDialog.SelectedPath;
 						Program.settings.writeSettings();
 
 						Program.settingsForm.setPathBox(folderBrowserDialog.SelectedPath);
 						
-						Program.Watcher.Path = folderBrowserDialog.SelectedPath + "\\Songs\\";
+						Program.Watcher.Path = folderBrowserDialog.SelectedPath;
 
-						Program.startWatch();
+						Program.setWatch(true);
 					} else {
-						Program.mainForm.ErrorLog("ERROR: Valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
+						Program.mainForm.ErrorLog("ERROR: No valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
 					}
 				}
 			} catch (Exception ex) {
