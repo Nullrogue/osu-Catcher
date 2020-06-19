@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IWshRuntimeLibrary;
+using System;
 using System.Windows.Forms;
 
 namespace osuCatcher
@@ -8,9 +9,8 @@ namespace osuCatcher
 		public SettingsForm()
 		{
 			InitializeComponent();
-			this.Visible = false;
+			Visible = false;
 		}
-
 		protected override void OnFormClosing(FormClosingEventArgs e)
 		{
 			Visible = false;
@@ -20,69 +20,88 @@ namespace osuCatcher
 
 		public void setRunCheck(bool val)
 		{
-			if (this.runCheck.InvokeRequired)
+			if (runCheck.InvokeRequired)
 			{
-				this.runCheck.Invoke(new Action<bool>(setRunCheck), new object[] { val });
+				runCheck.Invoke(new Action<bool>(setRunCheck), new object[] { val });
 				return;
 			}
 
-			this.runCheck.Checked = val;
+			runCheck.Checked = val;
 		}
 
 		public void setMinCheck(bool val)
 		{
-			if (this.minimizedCheck.InvokeRequired)
+			if (minimizedCheck.InvokeRequired)
 			{
-				this.minimizedCheck.Invoke(new Action<bool>(setMinCheck), new object[] { val });
+				minimizedCheck.Invoke(new Action<bool>(setMinCheck), new object[] { val });
 				return;
 			}
 
-			this.minimizedCheck.Checked = val;
+			minimizedCheck.Checked = val;
 		}
 
 		public void setCloseCheck(bool val)
 		{
-			if (this.closeCheck.InvokeRequired)
+			if (closeCheck.InvokeRequired)
 			{
-				this.closeCheck.Invoke(new Action<bool>(setCloseCheck), new object[] { val });
+				closeCheck.Invoke(new Action<bool>(setCloseCheck), new object[] { val });
 				return;
 			}
 
-			this.closeCheck.Checked = val;
+			closeCheck.Checked = val;
 		}
 
 		public void setPathBox(string s)
 		{
-			if (this.pathBox.InvokeRequired)
+			if (pathBox.InvokeRequired)
 			{
-				this.pathBox.Invoke(new Action<string>(setPathBox), new object[] { s });
+				pathBox.Invoke(new Action<string>(setPathBox), new object[] { s });
 				return;
 			}
 
-			this.pathBox.Text = s;
+			pathBox.Text = s;
 		}
 
 		private void runCheck_CheckedChanged(object sender, EventArgs e)
 		{
 			if (runCheck.Checked)
-				Program.CreateStartupLnk();
-			else
-				Program.DeleteStartupLnk();
+				// Create the shortcut responsible for starting the program on system start
+				try
+				{
+					WshShellClass wshShell = new WshShellClass();
 
-			Program.settings.RunOnStartup = runCheck.Checked;
-			Program.settings.writeSettings();
+					IWshShortcut shortcut = (IWshShortcut)wshShell.CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
+
+					shortcut.TargetPath = Application.ExecutablePath;
+					shortcut.WorkingDirectory = Application.StartupPath;
+
+					shortcut.Save();
+				} catch (Exception ex) {
+					Program.mainForm.ErrorLog("ERROR: Creating shortcut\n" + ex.Message + "\n" + ex.StackTrace);
+				}
+			else
+				// Delete the shortcut responsible for starting the program on system start
+				try
+				{
+					System.IO.File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
+				} catch (Exception ex) {
+					Program.mainForm.ErrorLog("ERROR: Deleting  shortcut\n" + ex.Message + "\n" + ex.StackTrace);
+				}
+
+			Program.settings["RunOnStartup"] = runCheck.Checked.ToString();
+			Program.writeConfig();
 		}
 
 		private void minimizedCheck_CheckedChanged(object sender, EventArgs e)
 		{
-			Program.settings.StartMinimized = minimizedCheck.Checked;
-			Program.settings.writeSettings();
+			Program.settings["StartMinimized"] = minimizedCheck.Checked.ToString();
+			Program.writeConfig();
 		}
 
 		private void closeCheck_CheckedChanged(object sender, EventArgs e)
 		{
-			Program.settings.MinimizeOnClose = closeCheck.Checked;
-			Program.settings.writeSettings();
+			Program.settings["MinimizeOnClose"] = closeCheck.Checked.ToString();
+			Program.writeConfig();
 		}
 
 		private void browseButton_Click(object sender, EventArgs e)
@@ -91,18 +110,18 @@ namespace osuCatcher
 			{
 				if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
 				{
-					if (System.IO.Directory.Exists(folderBrowserDialog.SelectedPath + "\\Songs\\"))
+					if (System.IO.Directory.Exists(folderBrowserDialog.SelectedPath))
 					{
-						Program.settings.OsuPath = folderBrowserDialog.SelectedPath;
-						Program.settings.writeSettings();
+						Program.settings["OsuPath"] = folderBrowserDialog.SelectedPath;
+						Program.writeConfig();
 
 						Program.settingsForm.setPathBox(folderBrowserDialog.SelectedPath);
 						
-						Program.Watcher.Path = folderBrowserDialog.SelectedPath + "\\Songs\\";
+						Program.Watcher.Path = folderBrowserDialog.SelectedPath;
 
-						Program.startWatch();
+						Program.setWatch(true);
 					} else {
-						Program.mainForm.ErrorLog("ERROR: Valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
+						Program.mainForm.ErrorLog("ERROR: No valid Osu! installation not found in: " + folderBrowserDialog.SelectedPath);
 					}
 				}
 			} catch (Exception ex) {

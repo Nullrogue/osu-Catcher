@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Timers;
 using System.Windows.Forms;
 
 namespace osuCatcher
@@ -13,14 +12,12 @@ namespace osuCatcher
 
 		public MainForm()
 		{
-			Minimized = Program.settings.StartMinimized;
 			InitializeComponent();
 
 			notifyIcon.ContextMenuStrip = contextMenuStrip1;
 
 			if (Minimized)
 				showNotifyIcon();
-
 		}
 
 		protected override void SetVisibleCore(bool value)
@@ -28,7 +25,7 @@ namespace osuCatcher
 			if (Minimized)
 			{
 				value = false;
-				if (!this.IsHandleCreated)
+				if (!IsHandleCreated)
 					CreateHandle();
 			}
 
@@ -37,7 +34,7 @@ namespace osuCatcher
 
 		protected override void OnFormClosing(FormClosingEventArgs e)
 		{
-			if (Program.settings.MinimizeOnClose)
+			if (bool.Parse(Program.settings["MinimizeOnClose"]))
 			{
 				e.Cancel = true;
 				showNotifyIcon();
@@ -47,13 +44,13 @@ namespace osuCatcher
 
 		public void setStateButton(string s)
 		{
-			if (this.stateButton.InvokeRequired)
+			if (stateButton.InvokeRequired)
 			{
-				this.stateButton.Invoke(new Action<string>(setStateButton), new object[] { s });
+				stateButton.Invoke(new Action<string>(setStateButton), new object[] { s });
 				return;
 			}
 
-			this.stateButton.Text = s;
+			stateButton.Text = s;
 		}
 
 		public void Log(string text)
@@ -116,7 +113,7 @@ namespace osuCatcher
 			logBox.SelectionLength = 0;
 		}
 		
-		private void showNotifyIcon()
+		public void showNotifyIcon()
 		{
 			Hide();
 
@@ -133,7 +130,7 @@ namespace osuCatcher
 
 		private void MainForm_Resize(object sender, EventArgs e)
 		{
-			if (this.WindowState == FormWindowState.Minimized)
+			if (WindowState == FormWindowState.Minimized)
 			{
 				Minimized = true;
 				showNotifyIcon();
@@ -145,16 +142,19 @@ namespace osuCatcher
 			Minimized = false;
 			Show();
 			notifyIcon.Visible = false;
-			this.WindowState = FormWindowState.Normal;
+			BringToFront();
+			WindowState = FormWindowState.Normal;
 		}
 
 		private void manualButton_Click(object sender, EventArgs e)
 		{
+			TimeSpan startTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1));
+
 			try
 			{
 				int count = 0;
 
-				foreach (string d in Directory.GetDirectories(Program.settings.OsuPath + "\\Songs\\"))
+				foreach (string d in Directory.GetDirectories(Program.settings["OsuPath"]))
 					foreach (string s in Directory.GetFiles(d, "*.osu"))
 						Program.parseOsu(s);
 
@@ -169,7 +169,8 @@ namespace osuCatcher
 					}
 				}
 
-				Program.mainForm.Log("Manual Scan Finished (Removed " + count + " backgrounds)");
+				TimeSpan finishTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1));
+				Program.mainForm.Log("Manual scan finished in " + (finishTime.Seconds - startTime.Seconds + ((finishTime.Milliseconds - startTime.Milliseconds) / 1000.0)) + "s (Removed " + count + " backgrounds)");
 			} catch (Exception ex) {
 				Program.mainForm.ErrorLog("ERROR: When manually scanning for backgrounds\n" + ex.Message + "\n" + ex.StackTrace);
 			}
@@ -183,23 +184,25 @@ namespace osuCatcher
 
 		private void stateButton_Click(object sender, EventArgs e)
 		{
-			if (Started)
-			{
-				Program.stopWatch();
-			} else {
-				Program.startWatch();
-			}
+			Program.setWatch(!Program.Watcher.EnableRaisingEvents);
 		}
 
 		private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			Program.settingsForm.Location = new System.Drawing.Point(Program.mainForm.Location.X + ((Program.mainForm.Size.Width / 2) - (Program.settingsForm.Size.Width / 2)), Program.mainForm.Location.Y + ((Program.mainForm.Size.Height / 2) - (Program.settingsForm.Size.Height / 2)));
+			Program.settingsForm.Location = new Point(Program.mainForm.Location.X + ((Program.mainForm.Size.Width / 2) - (Program.settingsForm.Size.Width / 2)), Program.mainForm.Location.Y + ((Program.mainForm.Size.Height / 2) - (Program.settingsForm.Size.Height / 2)));
 			Program.settingsForm.Visible = true;
 		}
 
-		private void quitMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
+		private void quitMenuItem_Click(object sender, EventArgs e)
+		{
+			notifyIcon.Visible = false;
+			Environment.Exit(0);
+		}
 
-		private void quitToolStripMenuItem_Click(object sender, EventArgs e) { System.Environment.Exit(0); }
-
+		private void quitToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			notifyIcon.Visible = false;
+			Environment.Exit(0);
+		}
 	}
 }

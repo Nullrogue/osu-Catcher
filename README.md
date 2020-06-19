@@ -12,7 +12,7 @@ Right off the bat you can see the log box in the middle of the window says there
  </br>
  After that you can see a couple buttons along the bottom for things like a manual scan, one for copying the contents of the log box to your clipboard (Use this to report any bugs or errors in [Issues](https://github.com/NullvaIue/osu-Catcher/issues)), and one to start and stop the program. The program should be functional right out of the box as long as your `Osu installation directory` setting is configured properly. At this point you can load up Osu! and start to added beatmaps and have their backgrounds deleted with no issues. (Hopefully)
 ## Requirements
-* [.NET Framework 4.6 or higher](https://www.microsoft.com/en-us/download/details.aspx?id=53344) (You probably already have a compatible version installed)
+* [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net472-web-installer) (You probably already have a compatible version installed)
 ## Installation
 * Go to [releases](https://github.com/NullvaIue/BeatmapCatcher/releases) and download the latest version of either the installer (recommended) or the zip file.
 	* For the installer:
