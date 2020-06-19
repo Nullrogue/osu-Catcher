@@ -25,7 +25,7 @@ namespace osuCatcher
 			if (Minimized)
 			{
 				value = false;
-				if (!this.IsHandleCreated)
+				if (!IsHandleCreated)
 					CreateHandle();
 			}
 
@@ -44,13 +44,13 @@ namespace osuCatcher
 
 		public void setStateButton(string s)
 		{
-			if (this.stateButton.InvokeRequired)
+			if (stateButton.InvokeRequired)
 			{
-				this.stateButton.Invoke(new Action<string>(setStateButton), new object[] { s });
+				stateButton.Invoke(new Action<string>(setStateButton), new object[] { s });
 				return;
 			}
 
-			this.stateButton.Text = s;
+			stateButton.Text = s;
 		}
 
 		public void Log(string text)
@@ -130,7 +130,7 @@ namespace osuCatcher
 
 		private void MainForm_Resize(object sender, EventArgs e)
 		{
-			if (this.WindowState == FormWindowState.Minimized)
+			if (WindowState == FormWindowState.Minimized)
 			{
 				Minimized = true;
 				showNotifyIcon();
@@ -142,8 +142,8 @@ namespace osuCatcher
 			Minimized = false;
 			Show();
 			notifyIcon.Visible = false;
-			this.BringToFront();
-			this.WindowState = FormWindowState.Normal;
+			BringToFront();
+			WindowState = FormWindowState.Normal;
 		}
 
 		private void manualButton_Click(object sender, EventArgs e)

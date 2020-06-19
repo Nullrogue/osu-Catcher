@@ -20,46 +20,46 @@ namespace osuCatcher
 
 		public void setRunCheck(bool val)
 		{
-			if (this.runCheck.InvokeRequired)
+			if (runCheck.InvokeRequired)
 			{
-				this.runCheck.Invoke(new Action<bool>(setRunCheck), new object[] { val });
+				runCheck.Invoke(new Action<bool>(setRunCheck), new object[] { val });
 				return;
 			}
 
-			this.runCheck.Checked = val;
+			runCheck.Checked = val;
 		}
 
 		public void setMinCheck(bool val)
 		{
-			if (this.minimizedCheck.InvokeRequired)
+			if (minimizedCheck.InvokeRequired)
 			{
-				this.minimizedCheck.Invoke(new Action<bool>(setMinCheck), new object[] { val });
+				minimizedCheck.Invoke(new Action<bool>(setMinCheck), new object[] { val });
 				return;
 			}
 
-			this.minimizedCheck.Checked = val;
+			minimizedCheck.Checked = val;
 		}
 
 		public void setCloseCheck(bool val)
 		{
-			if (this.closeCheck.InvokeRequired)
+			if (closeCheck.InvokeRequired)
 			{
-				this.closeCheck.Invoke(new Action<bool>(setCloseCheck), new object[] { val });
+				closeCheck.Invoke(new Action<bool>(setCloseCheck), new object[] { val });
 				return;
 			}
 
-			this.closeCheck.Checked = val;
+			closeCheck.Checked = val;
 		}
 
 		public void setPathBox(string s)
 		{
-			if (this.pathBox.InvokeRequired)
+			if (pathBox.InvokeRequired)
 			{
-				this.pathBox.Invoke(new Action<string>(setPathBox), new object[] { s });
+				pathBox.Invoke(new Action<string>(setPathBox), new object[] { s });
 				return;
 			}
 
-			this.pathBox.Text = s;
+			pathBox.Text = s;
 		}
 
 		private void runCheck_CheckedChanged(object sender, EventArgs e)

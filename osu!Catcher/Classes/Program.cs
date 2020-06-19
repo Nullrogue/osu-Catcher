@@ -14,8 +14,107 @@ namespace osuCatcher
 		static string VersionNum = "1.2.0";
 		public static Dictionary<string, string> settings = new Dictionary<string, string>();
 		public static FileSystemWatcher Watcher;
-		public static List<String> imagePaths = new List<String>();
-		public static List<String> osuPaths = new List<String>();
+		public static List<string> imagePaths = new List<string>();
+		public static List<string> osuPaths = new List<string>();
+
+		public static void writeConfig()
+		{
+			string content = "";
+
+			foreach (KeyValuePair<string, string> kvp in settings)
+				content = content + kvp.Key + "=" + kvp.Value + "\n";
+
+			File.WriteAllText(exeDirectory + "\\settings.cfg", content);
+		}
+
+		public static void setWatch(bool state)
+		{
+			try
+			{
+				Watcher.EnableRaisingEvents = state;
+				mainForm.setStateButton((state ? "Stop" : "Start"));
+
+				mainForm.Log((state ? "Started" : "Stopped") + " watching for beatmaps in " + Watcher.Path);
+			}
+			catch (Exception e)
+			{
+				mainForm.ErrorLog("ERROR: Failed while " + (state ? "starting" : "stopping") + " the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
+			}
+		}
+
+		public static string getExtension(string path) { return path.Split('.')[path.Split('.').Length - 1]; }
+
+		public static string parseOsu(string path)
+		{
+			try
+			{
+				using (StreamReader read = new StreamReader(path))
+					while (true)
+					{
+						string line = read.ReadLine();
+
+						if (line == null) break;
+
+						if (line == "[Events]")
+						{
+							line = read.ReadLine();
+							line = read.ReadLine();
+
+							if (line.IndexOf("Video,") != -1) line = read.ReadLine();
+
+							int Index = line.IndexOf("0,0,\"");
+							int lastIndex = line.LastIndexOf("\"");
+
+							if (Index < 0) break;
+
+							Index = line.IndexOf("\"");
+
+							string image = path.Substring(0, path.LastIndexOf('\\')) + "\\" + line.Substring(Index + 1, lastIndex - Index - 1);
+
+							return image;
+						}
+					}
+				return null;
+			}
+			catch (Exception e)
+			{
+				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
+				return null;
+			}
+		}
+
+		private static void OnCreated(object source, FileSystemEventArgs e)
+		{
+			if (!Directory.Exists(e.FullPath) && getExtension(e.FullPath).Contains("osu"))
+				osuPaths.Add(e.FullPath);
+		}
+
+		private static void OnDeleted(object source, FileSystemEventArgs e)
+		{
+			try
+			{
+				if (getExtension(e.FullPath).Contains("osz"))
+				{
+					foreach (string s in osuPaths)
+						imagePaths.Add(parseOsu(s));
+
+					for (int i = imagePaths.Count - 1; i >= 0; i--)
+					{
+						if (imagePaths[i] != null && File.Exists(imagePaths[i]))
+						{
+							File.Delete(imagePaths[i]);
+							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+						}
+
+						imagePaths.RemoveAt(i);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				mainForm.ErrorLog("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
+			}
+		}
 
 		[STAThread]
 		static void Main()
@@ -44,7 +143,7 @@ namespace osuCatcher
 
 			try
 			{
-				if (System.IO.File.Exists(exeDirectory + "\\settings.cfg"))
+				if (File.Exists(exeDirectory + "\\settings.cfg"))
 				{
 					// Read the settings from the settings file and set the corresponding values.
 					try
@@ -95,99 +194,6 @@ namespace osuCatcher
 				Application.Run(mainForm);
 			} catch (Exception e) {
 				mainForm.ErrorLog("ERROR: Initializing application\n" + e.Message + "\n" + e.StackTrace);
-			}
-		}
-
-		public static void writeConfig()
-		{
-			string content = "";
-
-			foreach (KeyValuePair<string, string> kvp in settings)
-				content = content + kvp.Key + "=" + kvp.Value + "\n";
-
-			System.IO.File.WriteAllText(exeDirectory + "\\settings.cfg", content);
-		}
-
-		public static void setWatch(bool state)
-		{
-			try
-			{
-				Watcher.EnableRaisingEvents = state;
-				mainForm.setStateButton((state ? "Stop" : "Start"));
-
-				mainForm.Log((state ? "Started" : "Stopped") + " watching for beatmaps in " + Watcher.Path);
-			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Failed while " + (state ? "starting" : "stopping") + " the fileWatcher\n" + e.Message + "\n" + e.StackTrace);
-			}
-		}
-
-		public static string getExtension(String path) { return path.Split('.')[path.Split('.').Length - 1]; }
-
-		public static String parseOsu(string path)
-		{
-			try
-			{
-				using (StreamReader read = new StreamReader(path))
-					while (true)
-					{
-						string line = read.ReadLine();
-
-						if (line == null) break;
-
-						if (line == "[Events]")
-						{
-							line = read.ReadLine();
-							line = read.ReadLine();
-
-							if (line.IndexOf("Video,") != -1) line = read.ReadLine();
-
-							int Index = line.IndexOf("0,0,\"");
-							int lastIndex = line.LastIndexOf("\"");
-
-							if (Index < 0) break;
-
-							Index = line.IndexOf("\"");
-
-							string image = path.Substring(0, path.LastIndexOf('\\')) + "\\" + line.Substring(Index + 1, lastIndex - Index - 1);
-
-							return image;
-						}
-					}
-				return null;
-			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
-				return null;
-			}
-		}
-
-		private static void OnCreated(object source, FileSystemEventArgs e)
-		{
-			if (!Directory.Exists(e.FullPath) && getExtension(e.FullPath).Contains("osu"))
-				osuPaths.Add(e.FullPath);
-		}
-
-		private static void OnDeleted(object source, FileSystemEventArgs e)
-		{
-			try
-			{
-				if (getExtension(e.FullPath).Contains("osz"))
-				{
-					foreach (string s in osuPaths)
-						imagePaths.Add(parseOsu(s));
-
-					for (int i = imagePaths.Count - 1; i >= 0; i--)
-					{
-						if (imagePaths[i] != null && System.IO.File.Exists(imagePaths[i]))
-						{
-							System.IO.File.Delete(imagePaths[i]);
-							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
-						}
-
-						imagePaths.RemoveAt(i);
-					}
-				}
-			} catch (Exception ex) {
-				mainForm.ErrorLog("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
 	}
