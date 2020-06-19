@@ -34,7 +34,7 @@ namespace osuCatcher
 
 		protected override void OnFormClosing(FormClosingEventArgs e)
 		{
-			if (Program.settings.MinimizeOnClose)
+			if (bool.Parse(Program.settings["MinimizeOnClose"]))
 			{
 				e.Cancel = true;
 				showNotifyIcon();
@@ -154,7 +154,7 @@ namespace osuCatcher
 			{
 				int count = 0;
 
-				foreach (string d in Directory.GetDirectories(Program.settings.OsuPath))
+				foreach (string d in Directory.GetDirectories(Program.settings["OsuPath"]))
 					foreach (string s in Directory.GetFiles(d, "*.osu"))
 						Program.parseOsu(s);
 

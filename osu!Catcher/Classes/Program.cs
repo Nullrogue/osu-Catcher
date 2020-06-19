@@ -1,6 +1,4 @@
-﻿using IWshRuntimeLibrary;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -13,8 +11,8 @@ namespace osuCatcher
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
 		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.1.3";
-		public static Settings settings = new Settings();
+		static string VersionNum = "1.2.0";
+		public static Dictionary<string, string> settings = new Dictionary<string, string>();
 		public static FileSystemWatcher Watcher;
 		public static List<String> imagePaths = new List<String>();
 		public static List<String> osuPaths = new List<String>();
@@ -23,14 +21,16 @@ namespace osuCatcher
 		static void Main()
 		{
 			// Check to make sure that no other duplicate process is being run.
-			if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1)
-			{
-				MessageBox.Show("osu!Catcher already running. Only one instance can be running at a time.");
-				return;
-			}
+			if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1) { MessageBox.Show("osu!Catcher already running. Only one instance can be running at a time."); return; }
 
 			mainForm = new MainForm();
 			settingsForm = new SettingsForm();
+
+			// Set default settings to be written or replaced with config settings.
+			settings.Add("OsuPath", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\osu!\\Songs\\");
+			settings.Add("RunOnStartup", "False");
+			settings.Add("StartMinimized", "False");
+			settings.Add("MinimizeOnClose", "True");
 
 			Watcher = new FileSystemWatcher
 			{
@@ -44,38 +44,51 @@ namespace osuCatcher
 
 			try
 			{
-			if (System.IO.File.Exists(exeDirectory + "\\settings.json"))
+				if (System.IO.File.Exists(exeDirectory + "\\settings.cfg"))
 				{
-				// Store the settings from the already compiled settings.json file to the settings object.
-					settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(exeDirectory + "\\settings.json"));
+					// Read the settings from the settings file and set the corresponding values.
+					try
+					{
+						using (StreamReader read = new StreamReader(exeDirectory + "\\settings.cfg"))
+							while (true)
+							{
+								string line = read.ReadLine();
+
+								if (line == null || line == "") break;
+
+								string[] values = line.Split('=');
+								settings[values[0]] = values[1];
+							}
+					} catch (Exception e) {
+						mainForm.ErrorLog("ERROR: Parsing settings.cfg\n" + e.Message + "\n" + e.StackTrace);
+					}
 				} else {
 					mainForm.WarningLog("WARNING: Settings not found, generating default settings.json file.");
 
 					// Create settings file and write default settings object in json format.
-					settings.writeSettings();
+					writeConfig();
 				}
 				
 				mainForm.Log("osu!Catcher Version " + VersionNum);
 
-				mainForm.Minimized = settings.StartMinimized;
+				mainForm.Minimized = bool.Parse(settings["StartMinimized"]);
 
-				if (mainForm.Minimized)
-					mainForm.showNotifyIcon();
+				if (mainForm.Minimized) mainForm.showNotifyIcon();
 
 				// Set the form checkboxes to match the current settings.
-				settingsForm.setRunCheck(settings.RunOnStartup);
-				settingsForm.setMinCheck(settings.StartMinimized);
-				settingsForm.setPathBox(settings.OsuPath);
-				settingsForm.setCloseCheck(settings.MinimizeOnClose);
+				settingsForm.setRunCheck(bool.Parse(settings["RunOnStartup"]));
+				settingsForm.setMinCheck(bool.Parse(settings["StartMinimized"]));
+				settingsForm.setPathBox(settings["OsuPath"]);
+				settingsForm.setCloseCheck(bool.Parse(settings["MinimizeOnClose"]));
 
-				if (Directory.Exists(settings.OsuPath))
+				if (Directory.Exists(settings["OsuPath"]))
 				{
-					Watcher.Path = settings.OsuPath;
+					Watcher.Path = settings["OsuPath"];
 
 					// Start watching the path for file changes.
 					setWatch(true);
 				} else {
-					mainForm.ErrorLog("ERROR: No valid Osu installation found in: " + settings.OsuPath);
+					mainForm.ErrorLog("ERROR: No valid Osu installation found in: " + settings["OsuPath"]);
 				}
 
 				Application.EnableVisualStyles();
@@ -85,31 +98,14 @@ namespace osuCatcher
 			}
 		}
 
-		public static void CreateStartupLnk()
+		public static void writeConfig()
 		{
-			try
-			{
-				WshShellClass wshShell = new WshShellClass();
+			string content = "";
 
-				IWshShortcut shortcut = (IWshShortcut)wshShell.CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
+			foreach (KeyValuePair<string, string> kvp in settings)
+				content = content + kvp.Key + "=" + kvp.Value + "\n";
 
-				shortcut.TargetPath = Application.ExecutablePath;
-				shortcut.WorkingDirectory = Application.StartupPath;
-
-				shortcut.Save();
-			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Creating shortcut\n" + e.Message + "\n" + e.StackTrace);
-			}
-		}
-
-		public static void DeleteStartupLnk()
-		{
-			try
-			{
-				System.IO.File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
-			} catch (Exception e) {
-				mainForm.ErrorLog("ERROR: Deleting  shortcut\n" + e.Message + "\n" + e.StackTrace);
-			}
+			System.IO.File.WriteAllText(exeDirectory + "\\settings.cfg", content);
 		}
 
 		public static void setWatch(bool state)
@@ -132,27 +128,23 @@ namespace osuCatcher
 			try
 			{
 				using (StreamReader read = new StreamReader(path))
-				{
 					while (true)
 					{
 						string line = read.ReadLine();
 
-						if (line == null)
-							break;
+						if (line == null) break;
 
 						if (line == "[Events]")
 						{
 							line = read.ReadLine();
 							line = read.ReadLine();
 
-							if (line.IndexOf("Video,") != -1)
-								line = read.ReadLine();
+							if (line.IndexOf("Video,") != -1) line = read.ReadLine();
 
 							int Index = line.IndexOf("0,0,\"");
 							int lastIndex = line.LastIndexOf("\"");
 
-							if (Index < 0)
-								break;
+							if (Index < 0) break;
 
 							Index = line.IndexOf("\"");
 
@@ -161,12 +153,10 @@ namespace osuCatcher
 							return image;
 						}
 					}
-				}
-
 				return null;
 			} catch (Exception e) {
 				mainForm.ErrorLog("ERROR: Parsing osu file\n" + e.Message + "\n" + e.StackTrace);
-			return null;
+				return null;
 			}
 		}
 
