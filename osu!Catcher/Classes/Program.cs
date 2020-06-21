@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace osuCatcher
@@ -10,10 +11,14 @@ namespace osuCatcher
 	{
 		public static MainForm mainForm;
 		public static SettingsForm settingsForm;
-		static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-		static string VersionNum = "1.2.0";
+
+		public static string exeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+		public static string VersionNum = "1.2.2";
+
 		public static Dictionary<string, string> settings = new Dictionary<string, string>();
+
 		public static FileSystemWatcher Watcher;
+
 		public static List<string> imagePaths = new List<string>();
 		public static List<string> osuPaths = new List<string>();
 
@@ -98,12 +103,22 @@ namespace osuCatcher
 					foreach (string s in osuPaths)
 						imagePaths.Add(parseOsu(s));
 
+					// Remove duplicate uses of the same images that are used for multiple difficulties.
+					imagePaths = imagePaths.Distinct().ToList();
+
 					for (int i = imagePaths.Count - 1; i >= 0; i--)
 					{
 						if (imagePaths[i] != null && File.Exists(imagePaths[i]))
 						{
-							File.Delete(imagePaths[i]);
-							mainForm.Log("Deleted background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+							if (!bool.Parse(settings["ReplaceImage"]))
+								File.Delete(imagePaths[i]);
+							else
+								if (File.Exists(exeDirectory + "\\BackgroundCache\\background." + getExtension(imagePaths[i])))
+									File.Copy(exeDirectory + "\\BackgroundCache\\background." + getExtension(imagePaths[i]), imagePaths[i], true);
+								else
+									throw new IOException("Replacement background image not found!");
+
+							mainForm.Log((bool.Parse(settings["ReplaceImage"]) ? "Replaced" : "Deleted") + " background [" + imagePaths[i].Substring(imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).Substring(imagePaths[i].Substring(0, imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
 						}
 
 						imagePaths.RemoveAt(i);
@@ -112,7 +127,7 @@ namespace osuCatcher
 			}
 			catch (Exception ex)
 			{
-				mainForm.ErrorLog("ERROR: Deleting  background\n" + ex.Message + "\n" + ex.StackTrace);
+				mainForm.ErrorLog("ERROR: " + (bool.Parse(settings["ReplaceImage"]) ? "Replacing" : "Deleting") + " background\n" + ex.Message + "\n" + ex.StackTrace);
 			}
 		}
 
@@ -130,6 +145,8 @@ namespace osuCatcher
 			settings.Add("RunOnStartup", "False");
 			settings.Add("StartMinimized", "False");
 			settings.Add("MinimizeOnClose", "True");
+			settings.Add("ReplaceImage", "False");
+			settings.Add("ImagePath", "");
 
 			Watcher = new FileSystemWatcher
 			{
