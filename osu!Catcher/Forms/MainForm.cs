@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace osuCatcher
@@ -156,21 +157,35 @@ namespace osuCatcher
 
 				foreach (string d in Directory.GetDirectories(Program.settings["OsuPath"]))
 					foreach (string s in Directory.GetFiles(d, "*.osu"))
-						Program.parseOsu(s);
+						Program.imagePaths.Add(Program.parseOsu(s));
+
+				// Remove duplicate uses of the same images that are used for multiple difficulties.
+				Program.imagePaths = Program.imagePaths.Distinct().ToList();
+				int numImages = Program.imagePaths.Count;
 
 				for (int i = Program.imagePaths.Count - 1; i >= 0; i--)
 				{
-					if (File.Exists(Program.imagePaths[i]))
+					if (!bool.Parse(Program.settings["ReplaceImage"]))
 					{
-						File.Delete(Program.imagePaths[i]);
-						Program.imagePaths.RemoveAt(i);
-						count++;
-						Program.mainForm.Log("Manually found and deleted background [" + Program.imagePaths[i].Substring(Program.imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).Substring(Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+						if (File.Exists(Program.imagePaths[i]))
+							File.Delete(Program.imagePaths[i]);
+					} else {
+						if (Program.imagePaths[i] != null)
+							if (File.Exists(Program.exeDirectory + "\\BackgroundCache\\background." + Program.getExtension(Program.imagePaths[i])))
+								File.Copy(Program.exeDirectory + "\\BackgroundCache\\background." + Program.getExtension(Program.imagePaths[i]), Program.imagePaths[i], true);
+							else
+								throw new IOException("Replacement background image not found!");
 					}
+
+					if (numImages <= 100)
+						Program.mainForm.Log("Manually found and " + (bool.Parse(Program.settings["ReplaceImage"]) ? "replaced" : "deleted") + " background [" + Program.imagePaths[i].Substring(Program.imagePaths[i].LastIndexOf('\\') + 1) + "] from beatmap [" + Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).Substring(Program.imagePaths[i].Substring(0, Program.imagePaths[i].LastIndexOf('\\')).LastIndexOf('\\') + 1) + "]");
+
+					Program.imagePaths.RemoveAt(i);
+					count++;
 				}
 
 				TimeSpan finishTime = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1));
-				Program.mainForm.Log("Manual scan finished in " + (finishTime.Seconds - startTime.Seconds + ((finishTime.Milliseconds - startTime.Milliseconds) / 1000.0)) + "s (Removed " + count + " backgrounds)");
+				Program.mainForm.Log("Manual scan finished in " + (finishTime.Seconds - startTime.Seconds + ((finishTime.Milliseconds - startTime.Milliseconds) / 1000.0)) + "s (" + (bool.Parse(Program.settings["ReplaceImage"]) ? "Replaced" : "Deleted") + " " + count + " backgrounds)");
 			} catch (Exception ex) {
 				Program.mainForm.ErrorLog("ERROR: When manually scanning for backgrounds\n" + ex.Message + "\n" + ex.StackTrace);
 			}
